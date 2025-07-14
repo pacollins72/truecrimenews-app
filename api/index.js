@@ -3,38 +3,39 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
-// Allow CORS for front-end
 app.use(cors());
 app.use(bodyParser.json());
 
-// Simple in-memory store
 let stories = [];
 
-// Endpoint to receive stories from n8n
+// POST endpoint for n8n
 app.post('/api/news', (req, res) => {
     if (!req.body.summaries) {
-        return res.status(400).json({ error: 'No summaries in request' });
+        return res.status(400).json({ error: 'Missing summaries' });
     }
 
-    // Save to in-memory store
-    stories = req.body.summaries.map((s, i) => ({
-        id: i + 1,
+    stories = req.body.summaries.map(s => ({
         summary: s,
         timestamp: new Date()
     }));
 
     console.log(`Received ${stories.length} stories`);
-    res.status(200).json({ message: 'Stories saved' });
+    res.json({ message: 'Stories saved' });
 });
 
-// Endpoint for front-end to fetch stories
-app.get('/api/news', (req, res) => {
-    res.json(stories);
+// GET endpoint for browser
+app.get('/', (req, res) => {
+    let html = `
+    <h1>True Crime News</h1>
+    ${stories.length === 0 ? '<p>No stories yet.</p>' : ''}
+    <ul>
+        ${stories.map(s => `<li>${s.summary}</li>`).join('')}
+    </ul>`;
+    res.send(html);
 });
 
-// Start server
 app.listen(PORT, () => {
-    console.log(`API server running at http://localhost:${PORT}`);
+    console.log(`Service running on port ${PORT}`);
 });
